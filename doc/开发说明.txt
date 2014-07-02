@@ -1,0 +1,20 @@
+总长度不要超过32个字节, 256位
+
+时间戳格式：yyyyMMddhhmmss 14
+
+方案：分布式生成, 参考UUID和snowflake
+时间戳（可读性） + 纳秒数 +
+
+
+
+
+方案：集中生成
+采用redis master+slave， 不是很完美
+
+优点：实现简单
+缺点：性能，数据没有及时持久化造成重复分配
+
+提现流水号：TX + yyyyMMddhhmmss + SeqId
+充值流水号：CZ + yyyyMMddhhmmss + SeqId
+交易号：JY + yyyyMMddhhmmss + SeqId
+订单号：DD + yyyyMMddhhmmss + SeqId
