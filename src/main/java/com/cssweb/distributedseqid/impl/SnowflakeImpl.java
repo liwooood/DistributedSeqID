@@ -6,14 +6,20 @@ package com.cssweb.distributedseqid.impl;
 public class SnowflakeImpl {
     //https://github.com/twitter/snowflake/
 
-    // 41位毫秒数时间戳 + （5位数据中心id + 5位节点id) + 12位自增值
+    /*
+    由时间戳 + 节点号 + 序列编号组成
+    节点号由数据中心id + 节点id组成
 
+    符号位0 + 41位毫秒数时间戳 + （5位数据中心id + 5位节点id) + 12位自增值
+    1 + 41 + 10 + 12 = 64位 (long)
+    序列编号有 12 位，意味着 【每个节点】 在 【每毫秒】 可以产生  【4096 个 ID】
+*/
     private final long workerId; // 机器标识
 
     //1303895660503L
     //1288834974657L
     //1361753741828L
-    private final static long twepoch = 1288834974657L;
+    private final static long twepoch = 1303895660503L;
 
     private long sequence = 0L;
 
@@ -23,9 +29,9 @@ public class SnowflakeImpl {
 
     private final static long sequenceBits = 12L; // 毫秒内自增位数
 
-    private final static long workerIdShift = sequenceBits;
+    private final static long workerIdShift = sequenceBits; // 节点id左移12位
 
-    private final static long timestampLeftShift = sequenceBits + workerIdBits;
+    private final static long timestampLeftShift = sequenceBits + workerIdBits; // 时间毫秒左移22位
 
     public final static long sequenceMask = -1L ^ (-1L << sequenceBits);
 
@@ -59,17 +65,19 @@ public class SnowflakeImpl {
 
 
         if (this.lastTimestamp == timestamp) {
+            // 当前毫秒内， 则seq + 1
             this.sequence = (this.sequence + 1) & this.sequenceMask;
 
             if (this.sequence == 0) {
+                // 当前毫秒内计数满了，则等待下一秒
                 timestamp = this.tilNextMillis(this.lastTimestamp);
             }
         } else {
             this.sequence = 0;
         }
 
-
         this.lastTimestamp = timestamp;
+
         long nextId = ((timestamp - twepoch) << timestampLeftShift) | (this.workerId << this.workerIdShift) | (this.sequence);
         return nextId;
     }
@@ -98,9 +106,14 @@ public class SnowflakeImpl {
 
 
     public static void main(String[] args){
+        Long t = 1303895660503L;
+        System.out.println(Long.toBinaryString(t));
+
         SnowflakeImpl worker2 = new SnowflakeImpl(10);
-        for (int i=0; i<10; i++) {
-            System.out.println(worker2.nextId());
+        for (int i=0; i<1; i++) {
+            Long nextId = worker2.nextId();
+            String id = nextId.toString();
+            System.out.println("nextid = " + id + ", len=" + id.length());
         }
     }
 }
